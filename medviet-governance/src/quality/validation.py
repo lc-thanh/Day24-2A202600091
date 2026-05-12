@@ -67,12 +67,16 @@ def validate_anonymized_data(filepath: str) -> dict:
         }
     }
 
-    # Check 1: Không còn CCCD gốc dạng số thuần túy
-    # (sau anonymization, cccd phải là fake hoặc masked)
-    # TODO: implement check
-    if "cccd" in df.columns and df["cccd"].astype(str).str.fullmatch(r"\d{12}").any():
+    # Check 1: Không còn CCCD gốc xuất hiện trong anonymized output
+    original_df = pd.read_csv("data/raw/patients_raw.csv")
+    anonymized_values = df.astype(str).to_string()
+    leaked_cccd = [
+        str(value) for value in original_df["cccd"].astype(str)
+        if str(value) in anonymized_values
+    ]
+    if leaked_cccd:
         results["success"] = False
-        results["failed_checks"].append("cccd_contains_original_format")
+        results["failed_checks"].append("original_cccd_leaked")
 
     # Check 2: Không có null values trong các cột quan trọng
     # TODO: implement check
@@ -90,8 +94,6 @@ def validate_anonymized_data(filepath: str) -> dict:
         results["failed_checks"].append(f"null_values_in_{','.join(null_columns)}")
 
     # Check 3: Số rows phải bằng original
-    # TODO: implement check
-    original_df = pd.read_csv("data/raw/patients_raw.csv")
     results["stats"]["original_rows"] = len(original_df)
     if len(df) != len(original_df):
         results["success"] = False

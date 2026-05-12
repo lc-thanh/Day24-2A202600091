@@ -1,5 +1,6 @@
 # src/pii/anonymizer.py
 import hashlib
+import random
 import pandas as pd
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
@@ -7,6 +8,16 @@ from faker import Faker
 from .detector import build_vietnamese_analyzer, detect_pii
 
 fake = Faker("vi_VN")
+
+
+def fake_cccd() -> str:
+    return "".join(str(random.randint(0, 9)) for _ in range(12))
+
+
+def fake_phone() -> str:
+    return f"0{random.choice(['3', '5', '7', '8', '9'])}" + "".join(
+        str(random.randint(0, 9)) for _ in range(8)
+    )
 
 class MedVietAnonymizer:
 
@@ -38,9 +49,9 @@ class MedVietAnonymizer:
                 "EMAIL_ADDRESS": OperatorConfig("replace",
                                  {"new_value": fake.email()}),   # TODO: fake email
                 "VN_CCCD": OperatorConfig("replace",
-                           {"new_value": fake.numerify("############")}),          # TODO: fake CCCD
+                           {"new_value": fake_cccd()}),
                 "VN_PHONE": OperatorConfig("replace",
-                            {"new_value": fake.numerify("0#########")}),         # TODO: fake phone
+                            {"new_value": fake_phone()}),
             }
         elif strategy == "mask":
             # TODO: implement masking
@@ -78,16 +89,28 @@ class MedVietAnonymizer:
 
         # TODO: Xử lý từng cột PII
         # Gợi ý: dùng df.apply() hoặc list comprehension
+        def replacement_series(column: str, generator) -> list:
+            original_values = set(df[column].astype(str))
+            replacements = []
+            for _ in range(len(df_anon)):
+                value = str(generator())
+                while value in original_values:
+                    value = str(generator())
+                replacements.append(value)
+            return replacements
+
         if "ho_ten" in df_anon.columns:
-            df_anon["ho_ten"] = df_anon["ho_ten"].astype(str).apply(self.anonymize_text)
+            df_anon["ho_ten"] = replacement_series("ho_ten", fake.name)
         if "dia_chi" in df_anon.columns:
-            df_anon["dia_chi"] = df_anon["dia_chi"].astype(str).apply(self.anonymize_text)
+            df_anon["dia_chi"] = replacement_series("dia_chi", fake.address)
         if "email" in df_anon.columns:
-            df_anon["email"] = df_anon["email"].astype(str).apply(self.anonymize_text)
+            df_anon["email"] = replacement_series("email", fake.email)
         if "cccd" in df_anon.columns:
-            df_anon["cccd"] = [fake.numerify("############") for _ in range(len(df_anon))]
+            df_anon["cccd"] = replacement_series("cccd", fake_cccd)
         if "so_dien_thoai" in df_anon.columns:
-            df_anon["so_dien_thoai"] = [fake.numerify("0#########") for _ in range(len(df_anon))]
+            df_anon["so_dien_thoai"] = replacement_series("so_dien_thoai", fake_phone)
+        if "bac_si_phu_trach" in df_anon.columns:
+            df_anon["bac_si_phu_trach"] = replacement_series("bac_si_phu_trach", fake.name)
 
         return df_anon
 
@@ -107,7 +130,13 @@ class MedVietAnonymizer:
         for col in pii_columns:
             for value in original_df[col].astype(str):
                 total += 1
-                results = detect_pii(value, self.analyzer)
+                normalized_value = value
+                if col == "cccd" and value.isdigit():
+                    normalized_value = value.zfill(12)
+                elif col == "so_dien_thoai" and value.isdigit() and len(value) == 9:
+                    normalized_value = f"0{value}"
+
+                results = detect_pii(normalized_value, self.analyzer)
                 if len(results) > 0:
                     detected += 1
 

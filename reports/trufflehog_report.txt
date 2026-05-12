@@ -1,0 +1,5 @@
+🐷🔑🐷  TruffleHog. Unearth your secrets. 🐷🔑🐷
+
+2026-05-12T22:31:02+07:00	info-0	trufflehog	running source	{"source_manager_worker_id": "9iMA8", "with_units": true}
+2026-05-12T22:31:02+07:00	info-0	trufflehog	scanning repo	{"source_manager_worker_id": "9iMA8", "unit_kind": "dir", "unit": "/tmp/trufflehog-9794-2589095105", "repo": "file:///home/thanh_wsl/ai/Day24-2A202600091"}
+2026-05-12T22:31:02+07:00	info-0	trufflehog	finished scanning	{"chunks": 51, "bytes": 102144, "verified_secrets": 0, "unverified_secrets": 0, "scan_duration": "34.37357ms", "trufflehog_version": "3.95.3", "verification_caching": {"Hits":0,"Misses":0,"HitsWasted":0,"AttemptsSaved":0,"VerificationTimeSpentMS":0}}

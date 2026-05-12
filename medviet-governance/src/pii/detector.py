@@ -11,7 +11,7 @@ def build_vietnamese_analyzer() -> AnalyzerEngine:
     # Tạo CCCD recognizer: số CCCD VN có đúng 12 chữ số
     cccd_pattern = Pattern(
         name="cccd_pattern",
-        regex=r"\b\d{11,12}\b",          # TODO: điền regex cho 12 chữ số
+        regex=r"\b\d{12}\b",
         score=0.9
     )
     cccd_recognizer = PatternRecognizer(
@@ -28,7 +28,7 @@ def build_vietnamese_analyzer() -> AnalyzerEngine:
         supported_language="vi",
         patterns=[Pattern(
             name="vn_phone",
-            regex=r"\b(?:0?[35789]\d{8})\b",      # TODO: điền regex
+            regex=r"\b0[35789]\d{8}\b",
             score=0.85
         )],
         context=["điện thoại", "sdt", "phone", "liên hệ"]
