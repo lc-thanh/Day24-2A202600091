@@ -1,4 +1,5 @@
 # src/pii/anonymizer.py
+import hashlib
 import pandas as pd
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
@@ -34,19 +35,29 @@ class MedVietAnonymizer:
             operators = {
                 "PERSON": OperatorConfig("replace", 
                           {"new_value": fake.name()}),
-                "EMAIL_ADDRESS": OperatorConfig("replace", 
-                                 {"new_value": ___}),   # TODO: fake email
-                "VN_CCCD": OperatorConfig("replace", 
-                           {"new_value": ___}),          # TODO: fake CCCD
-                "VN_PHONE": OperatorConfig("replace", 
-                            {"new_value": ___}),         # TODO: fake phone
+                "EMAIL_ADDRESS": OperatorConfig("replace",
+                                 {"new_value": fake.email()}),   # TODO: fake email
+                "VN_CCCD": OperatorConfig("replace",
+                           {"new_value": fake.numerify("############")}),          # TODO: fake CCCD
+                "VN_PHONE": OperatorConfig("replace",
+                            {"new_value": fake.numerify("0#########")}),         # TODO: fake phone
             }
         elif strategy == "mask":
             # TODO: implement masking
-            pass
+            operators = {
+                "DEFAULT": OperatorConfig("mask", {
+                    "masking_char": "*",
+                    "chars_to_mask": 8,
+                    "from_end": False
+                })
+            }
         elif strategy == "hash":
             # TODO: implement hashing dùng sha256
-            pass
+            operators = {
+                "DEFAULT": OperatorConfig("custom", {
+                    "lambda": lambda value: hashlib.sha256(value.encode()).hexdigest()
+                })
+            }
 
         anonymized = self.anonymizer.anonymize(
             text=text,
@@ -67,6 +78,16 @@ class MedVietAnonymizer:
 
         # TODO: Xử lý từng cột PII
         # Gợi ý: dùng df.apply() hoặc list comprehension
+        if "ho_ten" in df_anon.columns:
+            df_anon["ho_ten"] = df_anon["ho_ten"].astype(str).apply(self.anonymize_text)
+        if "dia_chi" in df_anon.columns:
+            df_anon["dia_chi"] = df_anon["dia_chi"].astype(str).apply(self.anonymize_text)
+        if "email" in df_anon.columns:
+            df_anon["email"] = df_anon["email"].astype(str).apply(self.anonymize_text)
+        if "cccd" in df_anon.columns:
+            df_anon["cccd"] = [fake.numerify("############") for _ in range(len(df_anon))]
+        if "so_dien_thoai" in df_anon.columns:
+            df_anon["so_dien_thoai"] = [fake.numerify("0#########") for _ in range(len(df_anon))]
 
         return df_anon
 

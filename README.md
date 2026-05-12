@@ -100,7 +100,7 @@ print(df.head(3))
 
 ```bash
 pip install presidio-analyzer presidio-anonymizer spacy faker
-python -m spacy download vi_core_news_lg  # Vietnamese NER model
+python -m spacy download xx_ent_wiki_sm  # Multilingual NER model with Vietnamese support
 ```
 
 ### 2.2 Xây Dựng Custom Recognizers cho Tiếng Việt
